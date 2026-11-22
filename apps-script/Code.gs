@@ -10,13 +10,13 @@
  *
  * Fonctions :
  *   majTop30()            lance la mise à jour (1 seule connexion à la base)
- *   installerDeclencheur() crée le déclencheur quotidien (6 h)
+ *   installerDeclencheur() crée les déclencheurs quotidiens (16 h et 18 h)
  */
 
 const ONGLET_DONNEES = 'donnees';
 const ONGLET_JOURNAL = 'journal';
 const PREMIERE_SAISON = 2022;
-const HEURE_MAJ = 6;
+const HEURES_MAJ = [16, 18];
 
 function saisonEnCours_() {
   const d = new Date();
@@ -107,7 +107,7 @@ function installerDeclencheur() {
   ScriptApp.getProjectTriggers()
     .filter(t => t.getHandlerFunction() === 'majTop30')
     .forEach(t => ScriptApp.deleteTrigger(t));
-  ScriptApp.newTrigger('majTop30').timeBased().everyDays(1).atHour(HEURE_MAJ).create();
+  HEURES_MAJ.forEach(h => ScriptApp.newTrigger('majTop30').timeBased().everyDays(1).atHour(h).create());
 }
 
 /** Fournit l'onglet "donnees" en CSV au graphique (adresse web /exec) */
@@ -115,5 +115,14 @@ function doGet() {
   const sh = SpreadsheetApp.getActive().getSheetByName(ONGLET_DONNEES);
   const v = sh ? sh.getDataRange().getDisplayValues() : [];
   const csv = v.map(r => r.map(x => /[",\n]/.test(x) ? '"' + x.replace(/"/g, '""') + '"' : x).join(',')).join('\n');
-  return ContentService.createTextOutput(csv).setMimeType(ContentService.MimeType.CSV);
+  return ContentService.createTextOutput(csv + '\nMAJ,' + derniereMaj_()).setMimeType(ContentService.MimeType.CSV);
+}
+
+/** Date et heure du dernier passage réussi (onglet journal) */
+function derniereMaj_() {
+  const sh = SpreadsheetApp.getActive().getSheetByName(ONGLET_JOURNAL);
+  if (!sh || sh.getLastRow() < 2) return '';
+  const rows = sh.getRange(2, 1, sh.getLastRow() - 1, 2).getValues();
+  const ok = rows.find(r => r[1] === 'OK' && r[0] instanceof Date);
+  return ok ? Utilities.formatDate(ok[0], 'Europe/Paris', "dd/MM/yyyy 'à' HH'h'mm") : '';
 }
