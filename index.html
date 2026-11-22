@@ -84,7 +84,7 @@ h1{font-weight:800;font-size:clamp(28px,4.5vw,44px);line-height:1.05;margin:0 0 
   <div class="kpis" id="kpis"></div>
   <div class="legend" id="legend"></div>
   <div id="liste"></div>
-  <p class="note">Source : base SKI, requête du 22/11/2026 (saisons 2022 à 2026, catégories WC et EC, GS et SL, DNS exclus). Top 30 = classé 1 à 30 au résultat final.</p>
+  <p class="note"><span id="maj">Données du 22/11/2026.</span> Source : base SKI, requête (saisons 2022 à 2026, catégories WC et EC, GS et SL, DNS exclus). Top 30 = classé 1 à 30 au résultat final.</p>
 </main>
 <script>
 {
@@ -473,14 +473,16 @@ const csv=`"Saison","Sexe","Nom","Prenom","Annee","Discipline","Departs_WC","Top
 2026,"W","POGNEAUX","Chiara",2002,"SL",5,0,"0",1,0,"0"
 2026,"W","SKABAR","Bessie",2007,"SL",0,0,"",3,0,"0"
 2026,"W","TESTUT-G STYR","Sara",2006,"SL",0,0,"",2,0,"0"`;
-const lines=csv.trim().split('\n').map(l=>l.split(',').map(x=>x.replace(/^"|"$/g,'')));
-const H=lines.shift(),ix=k=>H.indexOf(k);
-const data=lines.map(c=>({sa:+c[ix('Saison')],s:c[ix('Sexe')],n:c[ix('Nom')],p:c[ix('Prenom')],a:+c[ix('Annee')],d:c[ix('Discipline')],WC:{dep:+c[ix('Departs_WC')],top:+c[ix('Top30_WC')]},EC:{dep:+c[ix('Departs_EC')],top:+c[ix('Top30_EC')]}}));
-const saisons=[...new Set(data.map(r=>r.sa))].sort();
+const parse=t=>{const lines=t.trim().replace(/\r/g,'').split('\n').map(l=>l.split(',').map(x=>x.replace(/^"|"$/g,'')));const H=lines.shift(),ix=k=>H.indexOf(k);
+
+return lines.filter(c=>c.length>=10&&c[0]).map(c=>({sa:+c[ix('Saison')],s:c[ix('Sexe')],n:c[ix('Nom')],p:c[ix('Prenom')],a:+c[ix('Annee')],d:c[ix('Discipline')],WC:{dep:+c[ix('Departs_WC')],top:+c[ix('Top30_WC')]},EC:{dep:+c[ix('Departs_EC')],top:+c[ix('Top30_EC')]}}));};
+let data=parse(csv);
+let saisons=[...new Set(data.map(r=>r.sa))].sort();
 const st={sexe:'M',niv:'WC',disc:'ALL',tri:'pct',sas:new Set([saisons.at(-1)]),mode:'cumul',q:''};
-$('segSa').innerHTML=saisons.map(s=>`<label><input type="checkbox" value="${s}"${st.sas.has(s)?' checked':''}>${s}</label>`).join('')+'<button type="button" id="toutes">Tout cocher</button>';
+function buildSaisons(){$('segSa').innerHTML=saisons.map(s=>`<label><input type="checkbox" value="${s}"${st.sas.has(s)?' checked':''}>${s}</label>`).join('')+'<button type="button" id="toutes">Tout cocher</button>';}
+buildSaisons();
 $('segSa').addEventListener('change',e=>{const v=+e.target.value;e.target.checked?st.sas.add(v):st.sas.delete(v);render()});
-$('toutes').addEventListener('click',()=>{const all=st.sas.size===saisons.length;st.sas=new Set(all?[saisons.at(-1)]:saisons);$('segSa').querySelectorAll('input').forEach(c=>c.checked=st.sas.has(+c.value));render()});
+$('segSa').addEventListener('click',e=>{if(e.target.id!=='toutes')return;const all=st.sas.size===saisons.length;st.sas=new Set(all?[saisons.at(-1)]:saisons);$('segSa').querySelectorAll('input').forEach(c=>c.checked=st.sas.has(+c.value));render()});
 const fmtSa=()=>{const l=[...st.sas].sort();if(!l.length)return 'aucune saison';if(l.length===1)return 'saison '+l[0];const cont=l.at(-1)-l[0]===l.length-1;return (st.mode==='each'?'par saison ':'cumul ')+(cont?l[0]+'–'+l.at(-1):l.join(', '))};
 const NIV={WC:'Coupe du Monde',EC:"Coupe d'Europe"},DISC={GS:'Géant',SL:'Slalom'},COL={GS:'var(--gs)',SL:'var(--sl)'};
 const pct=(t,d)=>d?Math.round(100*t/d):0;
@@ -523,9 +525,19 @@ document.querySelectorAll('.seg').forEach(g=>g.addEventListener('click',e=>{
   g.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b));
   render();
 }));
-$('noms').innerHTML=[...new Set(data.map(r=>nom(r.n)+' '+r.p))].sort().map(x=>`<option value="${x}">`).join('');
+function buildNoms(){$('noms').innerHTML=[...new Set(data.map(r=>nom(r.n)+' '+r.p))].sort().map(x=>`<option value="${x}">`).join('');}
+buildNoms();
 $('q').addEventListener('input',e=>{st.q=e.target.value;render()});
 render();
+const CSV_URL='https://script.google.com/macros/s/AKfycbzvmF5uY03N3Q59rDPCmzDUHwuLzfrqdCHXCHgVkoN_dU2xuiFoMF88KVRTrgKDE3FQ/exec';
+if(CSV_URL.startsWith('http'))fetch(CSV_URL,{cache:'no-store'}).then(r=>r.ok?r.text():Promise.reject(r.status)).then(t=>{
+  const d=parse(t);if(d.length<20)return;
+  data=d;const old=saisons;saisons=[...new Set(data.map(r=>r.sa))].sort();
+  if(saisons.at(-1)!==old.at(-1)){st.sas=new Set([saisons.at(-1)])}
+  st.sas=new Set([...st.sas].filter(x=>saisons.includes(x)));if(!st.sas.size)st.sas.add(saisons.at(-1));
+  buildSaisons();buildNoms();render();
+  $('maj').textContent='Données mises à jour automatiquement chaque jour depuis la base SKI.';
+}).catch(()=>{});
 }
 </script>
 </body>
