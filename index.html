@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Top 30 Français</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+/* VOICE: graphics desk, sober, the finding first
+   IDEA: a results sheet — one line per racer, a start counter that fills with top 30s
+   PICTURE: the bar list itself, starts as track, top 30 as filled part
+   COLOUR and TYPE: white ground, ink, teal controls; GS light pink, SL sky blue; Libre Franklin
+   LAYOUT: title + filters, key figures, bar list sorted by % */
+:root{color-scheme:light dark;--bg:light-dark(#ffffff,#16181b);--ink:light-dark(#1a1817,#eceae6);--mute:light-dark(#5f5a55,#a5a09a);--line:light-dark(#e6e2dd,#2c2f33);--track:light-dark(#f1eeea,#25282c);--acc:light-dark(#0d7680,#4fb7c0);--gs:#e7779f;--sl:#3fa9e0}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Libre Franklin",system-ui,sans-serif;overflow-x:clip}
+.band{padding:clamp(24px,4vw,56px) max(5vw,16px);max-width:1100px;margin:0 auto}
+h1{font-weight:800;font-size:clamp(28px,4.5vw,44px);line-height:1.05;margin:0 0 8px;text-wrap:balance}
+.sub{color:var(--mute);margin:0 0 24px}
+.filters{display:flex;flex-wrap:wrap;gap:16px 28px;margin-bottom:24px}
+.grp{display:flex;flex-direction:column;gap:6px}
+.grp span{font-size:13px;color:var(--mute)}
+.seg{display:flex;flex-wrap:wrap;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{font:600 15px "Libre Franklin",sans-serif;min-height:44px;padding:0 16px;border:0;background:transparent;color:var(--ink);cursor:pointer}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button[aria-pressed=true]{background:var(--acc);color:#fff}
+.disc button[data-v=GS]{box-shadow:inset 0 -4px var(--gs)}.disc button[data-v=SL]{box-shadow:inset 0 -4px var(--sl)}.disc button[data-v=ALL]{box-shadow:inset 0 -4px #9a9590}
+.disc button[data-v=GS][aria-pressed=true]{background:var(--gs);color:#1a1817}.disc button[data-v=SL][aria-pressed=true]{background:var(--sl);color:#1a1817}.disc button[data-v=ALL][aria-pressed=true]{background:#8a8580;color:#fff}
+.chks{display:flex;flex-wrap:wrap;gap:6px}
+.chks label{display:flex;align-items:center;gap:6px;min-height:44px;padding:0 12px;border:1px solid var(--line);border-radius:10px;font-weight:600;font-size:15px;cursor:pointer;user-select:none}
+.chks input{width:18px;height:18px;accent-color:var(--acc);margin:0}
+.chks label:has(input:checked){border-color:var(--acc);background:color-mix(in srgb,var(--acc) 12%,transparent)}
+.chks button{font:600 14px 'Libre Franklin',sans-serif;min-height:44px;padding:0 12px;border:1px dashed var(--line);border-radius:10px;background:transparent;color:var(--mute);cursor:pointer}
+#modeGrp.off{opacity:.4;pointer-events:none}
+.sexe button[data-v=M]{box-shadow:inset 0 -4px #1b2a4e}.sexe button[data-v=W]{box-shadow:inset 0 -4px #f4c9d8}
+.sexe button[data-v=M][aria-pressed=true]{background:#1b2a4e;color:#fff}.sexe button[data-v=W][aria-pressed=true]{background:#fbe4ec;color:#1a1817}
+#triGrp.off{opacity:.4;pointer-events:none}
+.seg button:focus-visible{outline:3px solid var(--acc);outline-offset:-3px}
+.nomf{margin:-8px 0 24px;max-width:340px}.nomf label{font-size:13px;color:var(--mute)}#q{font:16px 'Libre Franklin',sans-serif;min-height:44px;padding:0 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)}#q:focus-visible{outline:3px solid var(--acc)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(200px,100%),1fr));gap:12px;margin-bottom:28px}
+.kpi{border-top:2px solid var(--ink);padding-top:10px}
+.kpi b{display:block;font-size:clamp(30px,4vw,40px);font-weight:800;line-height:1.1}
+.kpi small{color:var(--mute);font-size:14px}
+.legend{display:flex;flex-wrap:wrap;gap:18px;font-size:14px;color:var(--mute);margin-bottom:12px}
+.legend i{display:inline-block;width:14px;height:14px;border-radius:3px;vertical-align:-2px;margin-right:6px}
+.row{display:grid;grid-template-columns:minmax(0,15em) 5.2em minmax(0,1fr) 11em;align-items:center;gap:10px;padding:5px 0;border-bottom:1px solid var(--line)}
+.nm{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nm em{font-style:normal;font-weight:400;color:var(--mute);font-size:14px}
+.dc{font-size:13px;font-weight:600;color:var(--mute)}
+.bar{height:18px;display:flex;gap:2px}
+.cell{flex:1;border-radius:3px;border:2px solid var(--c);background:transparent}
+.cell.on{background:var(--c)}
+.cont{display:block;height:18px;border:2px solid var(--c);border-radius:3px;overflow:hidden}.cont span{display:block;height:100%;background:var(--c)}
+.leg-h{background:transparent!important;border:2px solid var(--mute)}
+.val{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;font-size:15px}
+.val b{font-weight:800}
+.empty{color:var(--mute);padding:20px 0}
+.note{color:var(--mute);font-size:13px;margin-top:20px}
+@media(max-width:600px){.row{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"n v" "b b";row-gap:4px}.nm{grid-area:n}.dc{display:none}.val{grid-area:v}.bar{grid-area:b}.nm::after{content:" · " attr(data-d);font-weight:600;color:var(--mute);font-size:13px}}
+@media (prefers-reduced-motion:no-preference){.cell.on{animation:pop .3s ease-out both}@keyframes pop{from{opacity:0}}}
+</style>
+</head>
+<body>
+<main class="band">
+  <h1 id="titre">Français dans les 30</h1>
+  <p class="sub">Départs pris et classements dans les 30 premiers, par coureur. Coche une ou plusieurs saisons ; avec plusieurs, choisis Cumul (total) ou Par saison (ordre chronologique, pratique avec le filtre Nom). Chaque case = un départ (barre continue au-delà de 15 départs) : case pleine = dans les 30, case vide = hors des 30 (DNF, DSQ ou classé au-delà de 30).</p>
+
+  <div class="filters">
+    <div class="grp"><span>Sexe</span><div class="seg sexe" data-k="sexe">
+      <button data-v="M" aria-pressed="true">Hommes</button><button data-v="W" aria-pressed="false">Dames</button></div></div>
+    <div class="grp"><span>Saisons</span><div class="chks" id="segSa"></div></div>
+    <div class="grp" id="modeGrp"><span>Plusieurs saisons</span><div class="seg" data-k="mode"><button data-v="cumul" aria-pressed="true">Cumul</button><button data-v="each" aria-pressed="false">Par saison</button></div></div>
+    <div class="grp"><span>Niveau</span><div class="seg" data-k="niv">
+      <button data-v="WC" aria-pressed="true">Coupe du Monde</button><button data-v="EC" aria-pressed="false">Coupe d'Europe</button></div></div>
+    <div class="grp"><span>Discipline</span><div class="seg disc" data-k="disc">
+      <button data-v="ALL" aria-pressed="true">GS + SL</button><button data-v="GS" aria-pressed="false">Géant</button><button data-v="SL" aria-pressed="false">Slalom</button></div></div>
+    <div class="grp" id="triGrp"><span>Tri</span><div class="seg" data-k="tri">
+      <button data-v="pct" aria-pressed="true">% top 30</button><button data-v="top" aria-pressed="false">Nb top 30</button><button data-v="nom" aria-pressed="false">Nom</button></div></div>
+  </div>
+
+  <div class="grp nomf"><label for="q">Nom</label><input id="q" type="search" list="noms" placeholder="ex. Aulnette" autocomplete="off"><datalist id="noms"></datalist></div>
+  <div class="kpis" id="kpis"></div>
+  <div class="legend" id="legend"></div>
+  <div id="liste"></div>
+  <p class="note">Source : base SKI, requête du 22/11/2026 (saisons 2022 à 2026, catégories WC et EC, GS et SL, DNS exclus). Top 30 = classé 1 à 30 au résultat final.</p>
+</main>
+<script>
+{
+const $=id=>document.getElementById(id);
+const csv=`"Saison","Sexe","Nom","Prenom","Annee","Discipline","Departs_WC","Top30_WC","Pct_WC","Departs_EC","Top30_EC","Pct_EC"
+2022,"M","AMIEZ","Steven",1998,"SL",4,1,"25",9,4,"44"
+2022,"M","ANGUENOT","Leo",1998,"GS",0,0,"",8,6,"75"
+2022,"M","ANGUENOT","Leo",1998,"SL",0,0,"",9,9,"100"
+2022,"M","AULNETTE","Auguste",2002,"SL",0,0,"",2,0,"0"
+2022,"M","AZZOLIN","Antoine",2003,"SL",0,0,"",2,0,"0"
+2022,"M","BANFI","Pablo",2001,"GS",0,0,"",1,0,"0"
+2022,"M","BIANCHINI","Augustin",2000,"SL",2,0,"0",9,4,"44"
+2022,"M","CENERELLI","Enzo",2000,"SL",0,0,"",2,0,"0"
+2022,"M","DESGRIPPES","Hugo",2000,"SL",0,0,"",9,6,"67"
+2022,"M","DIMIER CHAMBET","Sacha",2002,"SL",0,0,"",2,0,"0"
+2022,"M","DUCROS","Leo",2001,"GS",0,0,"",2,0,"0"
+2022,"M","ELEZI CANNAFERINA","Alban",2003,"GS",0,0,"",1,0,"0"
+2022,"M","ELEZI CANNAFERINA","Alban",2003,"SL",0,0,"",3,1,"33"
+2022,"M","FAIVRE","Mathieu",1992,"GS",8,8,"100",0,0,""
+2022,"M","FAVRE","Guerlain",2000,"GS",0,0,"",8,1,"13"
+2022,"M","FAVRE","Guerlain",2000,"SL",0,0,"",6,2,"33"
+2022,"M","FAVROT","Thibaut",1994,"GS",8,6,"75",0,0,""
+2022,"M","GAMEL SEIGNEUR","Charles",2002,"GS",0,0,"",2,0,"0"
+2022,"M","LAGIER","Jeremie",1998,"GS",0,0,"",8,4,"50"
+2022,"M","LAGIER","Jeremie",1998,"SL",0,0,"",9,2,"22"
+2022,"M","LARDON","Thomas",2001,"GS",0,0,"",8,3,"38"
+2022,"M","LARDON","Thomas",2001,"SL",0,0,"",2,0,"0"
+2022,"M","LETITRE","Theo",1997,"SL",7,0,"0",9,5,"56"
+2022,"M","LOPEZ","Theo",2000,"SL",0,0,"",2,0,"0"
+2022,"M","MOLLARD","Leo",2000,"SL",0,0,"",4,0,"0"
+2022,"M","MUFFAT-JEANDET","Victor",1989,"GS",4,2,"50",0,0,""
+2022,"M","MUFFAT-JEANDET","Victor",1989,"SL",2,1,"50",1,1,"100"
+2022,"M","NOEL","Clement",1997,"GS",3,0,"0",0,0,""
+2022,"M","NOEL","Clement",1997,"SL",10,5,"50",1,1,"100"
+2022,"M","ORECCHIONI","Diego",2000,"GS",0,0,"",8,5,"63"
+2022,"M","ORECCHIONI","Diego",2000,"SL",0,0,"",9,2,"22"
+2022,"M","PARAND","Loevan",1999,"GS",3,0,"0",8,7,"88"
+2022,"M","PINTURAULT","Alexis",1991,"GS",8,8,"100",0,0,""
+2022,"M","PINTURAULT","Alexis",1991,"SL",10,6,"60",0,0,""
+2022,"M","PIOLAINE","Adrien",2000,"GS",0,0,"",1,0,"0"
+2022,"M","RASSAT","Paco",1998,"SL",6,0,"0",9,6,"67"
+2022,"M","SARRAZIN","Cyprien",1994,"GS",7,2,"29",0,0,""
+2022,"M","VARCIN","Nils",2001,"SL",0,0,"",2,0,"0"
+2022,"W","BRAND","June",2005,"GS",0,0,"",2,0,"0"
+2022,"W","BRECHE","Clarisse",2001,"GS",0,0,"",3,1,"33"
+2022,"W","BRECHE","Clarisse",2001,"SL",0,0,"",10,2,"20"
+2022,"W","CERUTTI","Camille",1998,"GS",3,0,"0",0,0,""
+2022,"W","CHEVRIER","Axelle",2001,"GS",0,0,"",2,0,"0"
+2022,"W","CHEVRIER","Marion",2001,"GS",0,0,"",1,0,"0"
+2022,"W","CHEVRIER","Marion",2001,"SL",0,0,"",6,2,"33"
+2022,"W","DAHON","Alizee",2002,"GS",0,0,"",9,2,"22"
+2022,"W","DAHON","Alizee",2002,"SL",0,0,"",2,0,"0"
+2022,"W","DIREZ","Clara",1995,"GS",8,2,"25",2,1,"50"
+2022,"W","ESCANE","Doriane",1999,"GS",4,0,"0",6,3,"50"
+2022,"W","ESCANE","Doriane",1999,"SL",4,0,"0",4,2,"50"
+2022,"W","FRASSE SOMBET","Coralie",1991,"GS",9,9,"100",2,2,"100"
+2022,"W","HARO","Carmen",1998,"GS",0,0,"",8,2,"25"
+2022,"W","JAY","Marion",2003,"GS",0,0,"",2,0,"0"
+2022,"W","LACHEB","Kenza",1998,"SL",3,1,"33",10,10,"100"
+2022,"W","LAMBORAY","Tea",2001,"GS",0,0,"",2,0,"0"
+2022,"W","LAMURE","Marie",2001,"SL",6,0,"0",10,9,"90"
+2022,"W","MCFARLANE","Caitlin",2002,"GS",0,0,"",2,0,"0"
+2022,"W","MCFARLANE","Caitlin",2002,"SL",0,0,"",7,1,"14"
+2022,"W","MIRADOLI","Romane",1994,"GS",3,1,"33",0,0,""
+2022,"W","NADLER","Emma",2002,"GS",0,0,"",2,0,"0"
+2022,"W","NOENS","Nastasia",1988,"SL",9,8,"89",0,0,""
+2022,"W","POGNEAUX","Chiara",2002,"SL",0,0,"",1,0,"0"
+2022,"W","ROUX","Tifany",1997,"GS",1,0,"0",7,4,"57"
+2022,"W","SIMOND","Pauline",2002,"GS",0,0,"",2,0,"0"
+2022,"W","SOCQUET DAGOREAU","Julia",2000,"GS",0,0,"",8,3,"38"
+2022,"W","WORLEY","Tessa",1989,"GS",9,9,"100",0,0,""
+2023,"M","AMIEZ","Steven",1998,"SL",9,0,"0",8,6,"75"
+2023,"M","ANGUENOT","Leo",1998,"GS",5,1,"20",9,6,"67"
+2023,"M","ANGUENOT","Leo",1998,"SL",5,0,"0",7,2,"29"
+2023,"M","AULNETTE","Auguste",2002,"GS",0,0,"",4,0,"0"
+2023,"M","AULNETTE","Auguste",2002,"SL",0,0,"",2,0,"0"
+2023,"M","AZZOLIN","Antoine",2003,"SL",0,0,"",7,2,"29"
+2023,"M","BANFI","Pablo",2001,"GS",0,0,"",2,0,"0"
+2023,"M","BIANCHINI","Augustin",2000,"SL",1,0,"0",9,2,"22"
+2023,"M","DESGRIPPES","Hugo",2000,"SL",1,0,"0",9,8,"89"
+2023,"M","DIMIER CHAMBET","Sacha",2002,"SL",0,0,"",4,1,"25"
+2023,"M","DUCROS","Leo",2001,"GS",0,0,"",6,1,"17"
+2023,"M","ELEZI CANNAFERINA","Alban",2003,"GS",1,0,"0",8,2,"25"
+2023,"M","ELEZI CANNAFERINA","Alban",2003,"SL",0,0,"",5,0,"0"
+2023,"M","FAIVRE","Mathieu",1992,"GS",9,6,"67",0,0,""
+2023,"M","FAVRE","Guerlain",2000,"GS",0,0,"",9,3,"33"
+2023,"M","FAVRE","Guerlain",2000,"SL",0,0,"",4,0,"0"
+2023,"M","FAVROT","Thibaut",1994,"GS",1,1,"100",0,0,""
+2023,"M","GAMEL SEIGNEUR","Charles",2002,"GS",0,0,"",4,0,"0"
+2023,"M","LARDON","Thomas",2001,"GS",0,0,"",9,2,"22"
+2023,"M","LETITRE","Theo",1997,"SL",2,0,"0",2,2,"100"
+2023,"M","LOPEZ","Theo",2000,"SL",0,0,"",4,1,"25"
+2023,"M","MUFFAT-JEANDET","Victor",1989,"GS",5,4,"80",0,0,""
+2023,"M","MUFFAT-JEANDET","Victor",1989,"SL",3,2,"67",0,0,""
+2023,"M","NOEL","Clement",1997,"GS",3,0,"0",0,0,""
+2023,"M","NOEL","Clement",1997,"SL",10,5,"50",1,0,"0"
+2023,"M","ORECCHIONI","Diego",2000,"GS",3,0,"0",9,5,"56"
+2023,"M","ORECCHIONI","Diego",2000,"SL",0,0,"",7,0,"0"
+2023,"M","PARAND","Loevan",1999,"GS",6,0,"0",9,6,"67"
+2023,"M","PARAND","Loevan",1999,"SL",0,0,"",1,0,"0"
+2023,"M","PINTURAULT","Alexis",1991,"GS",10,10,"100",0,0,""
+2023,"M","PINTURAULT","Alexis",1991,"SL",9,7,"78",0,0,""
+2023,"M","RASSAT","Paco",1998,"SL",8,0,"0",9,6,"67"
+2023,"M","SAMBUIS","Baptiste",2002,"GS",0,0,"",2,0,"0"
+2023,"M","SAMBUIS","Baptiste",2002,"SL",0,0,"",6,1,"17"
+2023,"M","SARRAZIN","Cyprien",1994,"GS",5,1,"20",0,0,""
+2023,"M","SKABAR","Jonas",2004,"SL",0,0,"",2,0,"0"
+2023,"M","VITALE","Flavio",2005,"GS",0,0,"",6,0,"0"
+2023,"W","ACCAMBRAY","Louison",2001,"GS",0,0,"",4,1,"25"
+2023,"W","BOITEUX","Louna",2002,"SL",0,0,"",2,1,"50"
+2023,"W","BRECHE","Clarisse",2001,"GS",2,0,"0",7,6,"86"
+2023,"W","BRECHE","Clarisse",2001,"SL",3,1,"33",4,3,"75"
+2023,"W","CERUTTI","Camille",1998,"GS",0,0,"",1,0,"0"
+2023,"W","CHALAMEL","Cleo",2002,"SL",0,0,"",2,0,"0"
+2023,"W","CHEVRIER","Marion",2001,"SL",0,0,"",10,8,"80"
+2023,"W","CLEMENT","Karen",1999,"GS",0,0,"",6,6,"100"
+2023,"W","DAHON","Alizee",2002,"GS",0,0,"",10,3,"30"
+2023,"W","DAHON","Alizee",2002,"SL",0,0,"",10,2,"20"
+2023,"W","DIREZ","Clara",1995,"GS",9,2,"22",2,1,"50"
+2023,"W","DIREZ","Clara",1995,"SL",1,0,"0",0,0,""
+2023,"W","ESCANE","Doriane",1999,"GS",5,0,"0",9,8,"89"
+2023,"W","ESCANE","Doriane",1999,"SL",4,0,"0",7,4,"57"
+2023,"W","FRASSE SOMBET","Coralie",1991,"GS",10,6,"60",0,0,""
+2023,"W","GURI","Nina",2005,"SL",0,0,"",2,1,"50"
+2023,"W","HARO","Carmen",1998,"GS",0,0,"",10,6,"60"
+2023,"W","HARO","Carmen",1998,"SL",0,0,"",1,0,"0"
+2023,"W","JALLAT","Annabel",2003,"SL",0,0,"",2,2,"100"
+2023,"W","LACHEB","Kenza",1998,"SL",1,0,"0",10,9,"90"
+2023,"W","LAMURE","Marie",2001,"SL",10,2,"20",7,6,"86"
+2023,"W","LUGON-MOULIN","Laurine",2001,"GS",0,0,"",2,0,"0"
+2023,"W","LUGON-MOULIN","Laurine",2001,"SL",0,0,"",2,0,"0"
+2023,"W","MCFARLANE","Caitlin",2002,"GS",0,0,"",2,0,"0"
+2023,"W","MCFARLANE","Caitlin",2002,"SL",0,0,"",7,4,"57"
+2023,"W","MEYER","Garance",2004,"SL",0,0,"",3,0,"0"
+2023,"W","MIRADOLI","Romane",1994,"GS",2,1,"50",0,0,""
+2023,"W","NOENS","Nastasia",1988,"SL",10,6,"60",0,0,""
+2023,"W","POGNEAUX","Chiara",2002,"GS",0,0,"",4,0,"0"
+2023,"W","POGNEAUX","Chiara",2002,"SL",7,1,"14",10,3,"30"
+2023,"W","ROUX","Tifany",1997,"GS",0,0,"",6,1,"17"
+2023,"W","SIMOND","Pauline",2002,"SL",0,0,"",2,0,"0"
+2023,"W","SOCQUET DAGOREAU","Julia",2000,"GS",0,0,"",5,1,"20"
+2023,"W","WORLEY","Tessa",1989,"GS",10,10,"100",0,0,""
+2024,"M","AMIEZ","Steven",1998,"SL",12,8,"67",2,1,"50"
+2024,"M","ANGUENOT","Leo",1998,"GS",9,8,"89",3,3,"100"
+2024,"M","ANGUENOT","Leo",1998,"SL",8,1,"13",0,0,""
+2024,"M","AULNETTE","Auguste",2002,"GS",0,0,"",4,2,"50"
+2024,"M","AULNETTE","Auguste",2002,"SL",1,0,"0",2,2,"100"
+2024,"M","AURIAU","Sacha",2002,"GS",0,0,"",1,0,"0"
+2024,"M","AVOCAT MAULAZ","Leo",2003,"GS",0,0,"",1,0,"0"
+2024,"M","AVOCAT MAULAZ","Leo",2003,"SL",0,0,"",2,0,"0"
+2024,"M","AZZOLIN","Antoine",2003,"GS",0,0,"",3,0,"0"
+2024,"M","AZZOLIN","Antoine",2003,"SL",0,0,"",9,0,"0"
+2024,"M","BARALDI","Lio",2004,"GS",0,0,"",5,0,"0"
+2024,"M","BAUR","Emile",2005,"GS",0,0,"",3,0,"0"
+2024,"M","BERTHET","Augustin",2004,"GS",0,0,"",1,0,"0"
+2024,"M","BERTHET","Augustin",2004,"SL",0,0,"",2,0,"0"
+2024,"M","BIANCHINI","Augustin",2000,"SL",1,0,"0",4,0,"0"
+2024,"M","COPPEL","Leo",2003,"GS",0,0,"",5,0,"0"
+2024,"M","CRETIN","Ulysse",2002,"GS",0,0,"",4,0,"0"
+2024,"M","DESGRIPPES","Hugo",2000,"SL",11,1,"9",7,4,"57"
+2024,"M","DIMIER CHAMBET","Sacha",2002,"GS",0,0,"",2,0,"0"
+2024,"M","DIMIER CHAMBET","Sacha",2002,"SL",0,0,"",8,0,"0"
+2024,"M","DUCROS","Leo",2001,"GS",0,0,"",3,0,"0"
+2024,"M","ELEZI CANNAFERINA","Alban",2003,"GS",0,0,"",9,4,"44"
+2024,"M","ELEZI CANNAFERINA","Alban",2003,"SL",0,0,"",4,0,"0"
+2024,"M","FAIVRE","Mathieu",1992,"GS",3,1,"33",0,0,""
+2024,"M","FAVRE","Guerlain",2000,"GS",1,0,"0",4,3,"75"
+2024,"M","FAVROT","Thibaut",1994,"GS",10,9,"90",0,0,""
+2024,"M","GAMEL SEIGNEUR","Charles",2002,"GS",0,0,"",2,0,"0"
+2024,"M","HUOT-MARCHAND","Nash",2006,"GS",0,0,"",4,0,"0"
+2024,"M","LARDON","Thomas",2001,"GS",0,0,"",9,1,"11"
+2024,"M","LETITRE","Theo",1997,"SL",0,0,"",8,0,"0"
+2024,"M","LOPEZ","Theo",2000,"SL",0,0,"",4,0,"0"
+2024,"M","MICHEL","Gabin",2004,"GS",0,0,"",2,0,"0"
+2024,"M","MUFFAT-JEANDET","Victor",1989,"GS",9,4,"44",2,0,"0"
+2024,"M","MUFFAT-JEANDET","Victor",1989,"SL",10,0,"0",1,0,"0"
+2024,"M","NOEL","Clement",1997,"GS",3,0,"0",0,0,""
+2024,"M","NOEL","Clement",1997,"SL",12,9,"75",1,1,"100"
+2024,"M","ORECCHIONI","Diego",2000,"GS",4,0,"0",9,8,"89"
+2024,"M","ORECCHIONI","Diego",2000,"SL",0,0,"",2,0,"0"
+2024,"M","PAGET","Max",2002,"SL",0,0,"",4,0,"0"
+2024,"M","PARAND","Loevan",1999,"GS",1,0,"0",9,8,"89"
+2024,"M","PINTURAULT","Alexis",1991,"GS",3,3,"100",0,0,""
+2024,"M","RASSAT","Paco",1998,"SL",10,2,"20",1,0,"0"
+2024,"M","SAMBUIS","Baptiste",2002,"GS",0,0,"",6,0,"0"
+2024,"M","SAMBUIS","Baptiste",2002,"SL",0,0,"",9,1,"11"
+2024,"M","SARRAZIN","Cyprien",1994,"GS",2,0,"0",0,0,""
+2024,"M","SILVESTRE","Paul",2003,"GS",0,0,"",3,0,"0"
+2024,"M","SKABAR","Jonas",2004,"GS",0,0,"",3,0,"0"
+2024,"M","STOLEAR","Evan",2004,"GS",0,0,"",2,0,"0"
+2024,"M","TALAYRACH","Clement",2003,"GS",0,0,"",5,0,"0"
+2024,"M","VITALE","Flavio",2005,"GS",2,0,"0",8,7,"88"
+2024,"M","VITALE","Flavio",2005,"SL",0,0,"",6,0,"0"
+2024,"M","WOODBRIDGE","Charlie",2005,"GS",0,0,"",3,0,"0"
+2024,"W","ACCAMBRAY","Louison",2001,"GS",0,0,"",2,0,"0"
+2024,"W","BOITEUX","Louna",2002,"SL",0,0,"",1,0,"0"
+2024,"W","BRAND","June",2005,"GS",0,0,"",7,4,"57"
+2024,"W","BRECHE","Clarisse",2001,"GS",1,0,"0",7,3,"43"
+2024,"W","BRECHE","Clarisse",2001,"SL",9,3,"33",10,8,"80"
+2024,"W","CHARBONNIER","Emy",2005,"GS",0,0,"",2,0,"0"
+2024,"W","CHEVRIER","Marion",2001,"SL",10,4,"40",10,9,"90"
+2024,"W","CLEMENT","Karen",1999,"GS",0,0,"",3,3,"100"
+2024,"W","DAHON","Alizee",2002,"GS",2,0,"0",7,6,"86"
+2024,"W","DAHON","Alizee",2002,"SL",0,0,"",5,0,"0"
+2024,"W","DIREZ","Clara",1995,"GS",11,9,"82",0,0,""
+2024,"W","ESCANE","Doriane",1999,"GS",5,0,"0",2,2,"100"
+2024,"W","ESCANE","Doriane",1999,"SL",7,0,"0",4,4,"100"
+2024,"W","HARO","Carmen",1998,"GS",1,0,"0",4,2,"50"
+2024,"W","JALLAT","Annabel",2003,"GS",0,0,"",1,0,"0"
+2024,"W","JALLAT","Annabel",2003,"SL",0,0,"",10,3,"30"
+2024,"W","LAMURE","Marie",2001,"GS",3,0,"0",3,1,"33"
+2024,"W","LAMURE","Marie",2001,"SL",10,4,"40",8,6,"75"
+2024,"W","LUGON-MOULIN","Laurine",2001,"GS",1,0,"0",7,1,"14"
+2024,"W","LUGON-MOULIN","Laurine",2001,"SL",3,0,"0",10,4,"40"
+2024,"W","MCFARLANE","Caitlin",2002,"GS",5,1,"20",7,5,"71"
+2024,"W","MCFARLANE","Caitlin",2002,"SL",6,1,"17",10,7,"70"
+2024,"W","MEYER","Garance",2004,"GS",0,0,"",4,1,"25"
+2024,"W","MEYER","Garance",2004,"SL",0,0,"",6,0,"0"
+2024,"W","ORECCHIONI","Paola",2003,"GS",0,0,"",3,1,"33"
+2024,"W","POGNEAUX","Chiara",2002,"GS",0,0,"",2,0,"0"
+2024,"W","POGNEAUX","Chiara",2002,"SL",11,7,"64",1,0,"0"
+2024,"W","ROUX","Tifany",1997,"GS",1,0,"0",7,6,"86"
+2025,"M","AMIEZ","Steven",1998,"SL",12,9,"75",0,0,""
+2025,"M","ANGUENOT","Leo",1998,"GS",9,7,"78",0,0,""
+2025,"M","ANGUENOT","Leo",1998,"SL",6,0,"0",0,0,""
+2025,"M","AULNETTE","Auguste",2002,"GS",0,0,"",7,2,"29"
+2025,"M","AULNETTE","Auguste",2002,"SL",2,0,"0",10,8,"80"
+2025,"M","AVOCAT MAULAZ","Leo",2003,"SL",0,0,"",2,0,"0"
+2025,"M","AZZOLIN","Antoine",2003,"GS",0,0,"",2,0,"0"
+2025,"M","AZZOLIN","Antoine",2003,"SL",7,0,"0",10,8,"80"
+2025,"M","BARALDI","Lio",2004,"GS",0,0,"",8,1,"13"
+2025,"M","BAUR","Emile",2005,"GS",0,0,"",2,1,"50"
+2025,"M","BIANCHINI","Augustin",2000,"SL",0,0,"",5,0,"0"
+2025,"M","COPPEL","Leo",2003,"GS",0,0,"",2,0,"0"
+2025,"M","CRETIN","Ulysse",2002,"GS",0,0,"",2,0,"0"
+2025,"M","DESGRIPPES","Hugo",2000,"SL",10,1,"10",7,2,"29"
+2025,"M","DIMIER CHAMBET","Sacha",2002,"SL",0,0,"",6,0,"0"
+2025,"M","ELEZI CANNAFERINA","Alban",2003,"GS",6,2,"33",9,7,"78"
+2025,"M","FAIVRE","Mathieu",1992,"GS",6,0,"0",7,3,"43"
+2025,"M","FAVRE","Guerlain",2000,"GS",5,0,"0",9,8,"89"
+2025,"M","FAVROT","Thibaut",1994,"GS",9,9,"100",0,0,""
+2025,"M","HEUDE","Arthur",2005,"GS",0,0,"",5,2,"40"
+2025,"M","HUOT-MARCHAND","Nash",2006,"GS",0,0,"",3,0,"0"
+2025,"M","LAGIER","Jeremie",1998,"SL",0,0,"",10,7,"70"
+2025,"M","LARDON","Thomas",2001,"GS",0,0,"",8,1,"13"
+2025,"M","LARDON","Thomas",2001,"SL",0,0,"",2,0,"0"
+2025,"M","LLORACH","Jules",2003,"SL",0,0,"",2,0,"0"
+2025,"M","LOPEZ","Theo",2000,"SL",0,0,"",3,1,"33"
+2025,"M","MICHEL","Gabin",2004,"SL",0,0,"",2,0,"0"
+2025,"M","MUFFAT-JEANDET","Victor",1989,"GS",2,1,"50",0,0,""
+2025,"M","MUFFAT-JEANDET","Victor",1989,"SL",12,8,"67",0,0,""
+2025,"M","NOEL","Clement",1997,"GS",2,0,"0",0,0,""
+2025,"M","NOEL","Clement",1997,"SL",11,9,"82",0,0,""
+2025,"M","ORECCHIONI","Diego",2000,"GS",6,2,"33",4,2,"50"
+2025,"M","PARAND","Loevan",1999,"GS",4,2,"50",9,7,"78"
+2025,"M","PINTURAULT","Alexis",1991,"GS",4,4,"100",0,0,""
+2025,"M","RASSAT","Paco",1998,"SL",12,6,"50",0,0,""
+2025,"M","SAMBUIS","Baptiste",2002,"SL",2,0,"0",10,5,"50"
+2025,"M","SARRAZIN","Cyprien",1994,"GS",2,1,"50",0,0,""
+2025,"M","SILVESTRE","Paul",2003,"SL",0,0,"",9,3,"33"
+2025,"M","SKABAR","Jonas",2004,"GS",0,0,"",3,0,"0"
+2025,"M","SKABAR","Jonas",2004,"SL",0,0,"",5,0,"0"
+2025,"M","TALAYRACH","Clement",2003,"SL",0,0,"",4,0,"0"
+2025,"M","VITALE","Flavio",2005,"GS",7,1,"14",4,3,"75"
+2025,"M","WOODBRIDGE","Charlie",2005,"GS",0,0,"",2,1,"50"
+2025,"W","ABOULY","Lois",2001,"GS",0,0,"",10,7,"70"
+2025,"W","BOITEUX","Louna",2002,"SL",0,0,"",2,0,"0"
+2025,"W","BRAND","June",2005,"GS",2,0,"0",10,8,"80"
+2025,"W","BRAND","June",2005,"SL",0,0,"",3,0,"0"
+2025,"W","BRECHE","Clarisse",2001,"GS",4,1,"25",2,2,"100"
+2025,"W","BRECHE","Clarisse",2001,"SL",7,6,"86",2,2,"100"
+2025,"W","BUET","Nina",2007,"GS",0,0,"",2,0,"0"
+2025,"W","CAIRE","Alice",2007,"GS",0,0,"",2,0,"0"
+2025,"W","CARROZ","Leonie",2004,"GS",0,0,"",2,0,"0"
+2025,"W","CARROZ","Leonie",2004,"SL",0,0,"",4,0,"0"
+2025,"W","CHARBONNIER","Emy",2005,"GS",0,0,"",6,0,"0"
+2025,"W","CHARBOTEL","Ilona",2007,"SL",0,0,"",6,0,"0"
+2025,"W","CHEVRIER","Axelle",2001,"GS",0,0,"",4,1,"25"
+2025,"W","CHEVRIER","Marion",2001,"GS",0,0,"",3,2,"67"
+2025,"W","CHEVRIER","Marion",2001,"SL",9,2,"22",9,9,"100"
+2025,"W","CLEMENT","Karen",1999,"GS",5,0,"0",2,2,"100"
+2025,"W","DAHON","Alizee",2002,"GS",0,0,"",4,0,"0"
+2025,"W","DIREZ","Clara",1995,"GS",8,4,"50",3,2,"67"
+2025,"W","ESCANE","Doriane",1999,"GS",4,1,"25",10,5,"50"
+2025,"W","ESCANE","Doriane",1999,"SL",6,0,"0",3,3,"100"
+2025,"W","JALLAT","Annabel",2003,"GS",0,0,"",2,0,"0"
+2025,"W","JALLAT","Annabel",2003,"SL",0,0,"",9,2,"22"
+2025,"W","LAMURE","Marie",2001,"GS",0,0,"",1,0,"0"
+2025,"W","LAMURE","Marie",2001,"SL",10,6,"60",0,0,""
+2025,"W","LUGON-MOULIN","Laurine",2001,"GS",0,0,"",9,4,"44"
+2025,"W","LUGON-MOULIN","Laurine",2001,"SL",2,0,"0",8,3,"38"
+2025,"W","MCFARLANE","Caitlin",2002,"GS",6,0,"0",6,5,"83"
+2025,"W","MCFARLANE","Caitlin",2002,"SL",9,1,"11",7,6,"86"
+2025,"W","MERLOZ","Cloe",2003,"GS",0,0,"",4,1,"25"
+2025,"W","MEYER","Garance",2004,"GS",0,0,"",5,2,"40"
+2025,"W","MEYER","Garance",2004,"SL",0,0,"",2,0,"0"
+2025,"W","OLLIER","Marjolaine",2003,"GS",0,0,"",9,1,"11"
+2025,"W","OLLIER","Marjolaine",2003,"SL",0,0,"",7,1,"14"
+2025,"W","ORECCHIONI","Paola",2003,"GS",0,0,"",10,3,"30"
+2025,"W","POGNEAUX","Chiara",2002,"SL",9,4,"44",0,0,""
+2025,"W","SIMOND","Margot",2007,"GS",0,0,"",2,0,"0"
+2025,"W","SIMOND","Margot",2007,"SL",0,0,"",4,0,"0"
+2025,"W","SIMOND","Pauline",2002,"GS",0,0,"",4,0,"0"
+2025,"W","TRIPODI","Stessy",2000,"SL",0,0,"",4,0,"0"
+2026,"M","AMIEZ","Steven",1998,"SL",11,7,"64",0,0,""
+2026,"M","ANGUENOT","Leo",1998,"GS",9,7,"78",0,0,""
+2026,"M","ANGUENOT","Leo",1998,"SL",1,0,"0",0,0,""
+2026,"M","AULNETTE","Auguste",2002,"GS",0,0,"",10,9,"90"
+2026,"M","AULNETTE","Auguste",2002,"SL",7,2,"29",9,8,"89"
+2026,"M","AVOCAT MAULAZ","Leo",2003,"GS",0,0,"",2,0,"0"
+2026,"M","AVOCAT MAULAZ","Leo",2003,"SL",0,0,"",2,0,"0"
+2026,"M","AZZOLIN","Antoine",2003,"SL",10,2,"20",6,4,"67"
+2026,"M","BARALDI","Lio",2004,"GS",0,0,"",10,6,"60"
+2026,"M","BAUR","Emile",2005,"GS",0,0,"",4,0,"0"
+2026,"M","DAMEVIN","Pierre-Antoine",2005,"SL",0,0,"",6,0,"0"
+2026,"M","DESGRIPPES","Hugo",2000,"SL",9,1,"11",9,7,"78"
+2026,"M","DIMIER CHAMBET","Sacha",2002,"GS",0,0,"",2,0,"0"
+2026,"M","DIMIER CHAMBET","Sacha",2002,"SL",0,0,"",6,0,"0"
+2026,"M","ELEZI CANNAFERINA","Alban",2003,"GS",9,5,"56",0,0,""
+2026,"M","FAVRE","Guerlain",2000,"GS",8,1,"13",8,8,"100"
+2026,"M","FAVROT","Thibaut",1994,"GS",9,6,"67",0,0,""
+2026,"M","FINK","Damien",2007,"GS",0,0,"",2,0,"0"
+2026,"M","HEUDE","Arthur",2005,"GS",0,0,"",6,1,"17"
+2026,"M","HUOT-MARCHAND","Nash",2006,"GS",0,0,"",10,5,"50"
+2026,"M","LARDON","Thomas",2001,"GS",1,0,"0",10,8,"80"
+2026,"M","LLORACH","Jules",2003,"GS",0,0,"",2,0,"0"
+2026,"M","LLORACH","Jules",2003,"SL",0,0,"",2,0,"0"
+2026,"M","LOPEZ","Theo",2000,"SL",0,0,"",6,2,"33"
+2026,"M","MICHEL","Gabin",2004,"SL",0,0,"",4,0,"0"
+2026,"M","MUFFAT-JEANDET","Victor",1989,"SL",11,11,"100",0,0,""
+2026,"M","NOEL","Clement",1997,"SL",11,10,"91",0,0,""
+2026,"M","ORECCHIONI","Diego",2000,"GS",7,0,"0",8,4,"50"
+2026,"M","PARAND","Loevan",1999,"GS",8,3,"38",6,5,"83"
+2026,"M","PINTURAULT","Alexis",1991,"GS",9,9,"100",0,0,""
+2026,"M","RASSAT","Paco",1998,"SL",11,8,"73",0,0,""
+2026,"M","ROGUE","Romeo",2006,"GS",0,0,"",2,0,"0"
+2026,"M","SAMBUIS","Baptiste",2002,"SL",0,0,"",2,2,"100"
+2026,"M","SIEGWALD","Martin",2007,"GS",0,0,"",2,0,"0"
+2026,"M","SILVESTRE","Paul",2003,"GS",0,0,"",9,3,"33"
+2026,"M","SILVESTRE","Paul",2003,"SL",2,0,"0",9,6,"67"
+2026,"M","SKABAR","Jonas",2004,"GS",0,0,"",9,2,"22"
+2026,"M","SKABAR","Jonas",2004,"SL",0,0,"",8,0,"0"
+2026,"M","STOLEAR","Evan",2004,"GS",0,0,"",2,0,"0"
+2026,"M","TALAYRACH","Clement",2003,"GS",0,0,"",8,2,"25"
+2026,"M","TALAYRACH","Clement",2003,"SL",0,0,"",6,1,"17"
+2026,"M","VITALE","Flavio",2005,"GS",8,3,"38",1,0,"0"
+2026,"M","VITALE","Flavio",2005,"SL",0,0,"",4,3,"75"
+2026,"M","WOODBRIDGE","Charlie",2005,"GS",0,0,"",3,0,"0"
+2026,"W","ABOULY","Lois",2001,"GS",0,0,"",8,5,"63"
+2026,"W","ARNAUD","Melina",2008,"SL",0,0,"",2,0,"0"
+2026,"W","BARRAT","Leonie",2006,"SL",0,0,"",2,0,"0"
+2026,"W","BLANC","Lola",2006,"SL",0,0,"",2,0,"0"
+2026,"W","BOURGEOIS","Coline",2009,"SL",0,0,"",2,0,"0"
+2026,"W","BOUVET","Esthere",2009,"SL",0,0,"",2,0,"0"
+2026,"W","BUET","Nina",2007,"GS",0,0,"",4,0,"0"
+2026,"W","BUET","Nina",2007,"SL",0,0,"",2,0,"0"
+2026,"W","CAIRE","Alice",2007,"GS",0,0,"",1,0,"0"
+2026,"W","CAIRE","Alice",2007,"SL",0,0,"",1,0,"0"
+2026,"W","CARROZ","Leonie",2004,"SL",0,0,"",4,0,"0"
+2026,"W","CERUTTI","Camille",1998,"GS",6,1,"17",0,0,""
+2026,"W","CHARBONNIER","Emy",2005,"GS",0,0,"",9,6,"67"
+2026,"W","CHARBONNIER","Emy",2005,"SL",0,0,"",1,0,"0"
+2026,"W","CHARBOTEL","Ilona",2007,"SL",0,0,"",9,2,"22"
+2026,"W","CHEVRIER","Axelle",2001,"GS",2,0,"0",9,4,"44"
+2026,"W","CHEVRIER","Marion",2001,"GS",1,0,"0",4,2,"50"
+2026,"W","CHEVRIER","Marion",2001,"SL",10,10,"100",0,0,""
+2026,"W","CLEMENT","Karen",1999,"GS",0,0,"",5,1,"20"
+2026,"W","DAHON","Alizee",2002,"GS",1,0,"0",8,4,"50"
+2026,"W","DIREZ","Clara",1995,"GS",9,5,"56",0,0,""
+2026,"W","ESCANE","Doriane",1999,"GS",9,2,"22",4,4,"100"
+2026,"W","ESCANE","Doriane",1999,"SL",8,1,"13",3,2,"67"
+2026,"W","HARO","Carmen",1998,"GS",0,0,"",4,1,"25"
+2026,"W","JALLAT","Annabel",2003,"GS",0,0,"",4,2,"50"
+2026,"W","JALLAT","Annabel",2003,"SL",3,0,"0",10,6,"60"
+2026,"W","JEAN","Manutea",2007,"SL",0,0,"",2,0,"0"
+2026,"W","LAMURE","Marie",2001,"SL",10,6,"60",1,1,"100"
+2026,"W","LUGON-MOULIN","Laurine",2001,"GS",0,0,"",9,4,"44"
+2026,"W","LUGON-MOULIN","Laurine",2001,"SL",2,0,"0",10,5,"50"
+2026,"W","MARREAU","Stella",2007,"SL",0,0,"",1,0,"0"
+2026,"W","MCFARLANE","Caitlin",2002,"GS",3,0,"0",2,0,"0"
+2026,"W","MCFARLANE","Caitlin",2002,"SL",10,6,"60",0,0,""
+2026,"W","MEYER","Garance",2004,"GS",0,0,"",1,0,"0"
+2026,"W","OLLIER","Marjolaine",2003,"GS",0,0,"",4,2,"50"
+2026,"W","OLLIER","Marjolaine",2003,"SL",4,0,"0",3,2,"67"
+2026,"W","PEIZERAT","Cassandre",2008,"SL",0,0,"",2,0,"0"
+2026,"W","POGNEAUX","Chiara",2002,"SL",5,0,"0",1,0,"0"
+2026,"W","SKABAR","Bessie",2007,"SL",0,0,"",3,0,"0"
+2026,"W","TESTUT-G STYR","Sara",2006,"SL",0,0,"",2,0,"0"`;
+const lines=csv.trim().split('\n').map(l=>l.split(',').map(x=>x.replace(/^"|"$/g,'')));
+const H=lines.shift(),ix=k=>H.indexOf(k);
+const data=lines.map(c=>({sa:+c[ix('Saison')],s:c[ix('Sexe')],n:c[ix('Nom')],p:c[ix('Prenom')],a:+c[ix('Annee')],d:c[ix('Discipline')],WC:{dep:+c[ix('Departs_WC')],top:+c[ix('Top30_WC')]},EC:{dep:+c[ix('Departs_EC')],top:+c[ix('Top30_EC')]}}));
+const saisons=[...new Set(data.map(r=>r.sa))].sort();
+const st={sexe:'M',niv:'WC',disc:'ALL',tri:'pct',sas:new Set([saisons.at(-1)]),mode:'cumul',q:''};
+$('segSa').innerHTML=saisons.map(s=>`<label><input type="checkbox" value="${s}"${st.sas.has(s)?' checked':''}>${s}</label>`).join('')+'<button type="button" id="toutes">Tout cocher</button>';
+$('segSa').addEventListener('change',e=>{const v=+e.target.value;e.target.checked?st.sas.add(v):st.sas.delete(v);render()});
+$('toutes').addEventListener('click',()=>{const all=st.sas.size===saisons.length;st.sas=new Set(all?[saisons.at(-1)]:saisons);$('segSa').querySelectorAll('input').forEach(c=>c.checked=st.sas.has(+c.value));render()});
+const fmtSa=()=>{const l=[...st.sas].sort();if(!l.length)return 'aucune saison';if(l.length===1)return 'saison '+l[0];const cont=l.at(-1)-l[0]===l.length-1;return (st.mode==='each'?'par saison ':'cumul ')+(cont?l[0]+'–'+l.at(-1):l.join(', '))};
+const NIV={WC:'Coupe du Monde',EC:"Coupe d'Europe"},DISC={GS:'Géant',SL:'Slalom'},COL={GS:'var(--gs)',SL:'var(--sl)'};
+const pct=(t,d)=>d?Math.round(100*t/d):0;
+const nom=s=>s.charAt(0)+s.slice(1).toLowerCase().replace(/([ -])(\w)/g,(m,a,b)=>a+b.toUpperCase());
+
+function render(){
+  const multi=st.sas.size>1,EACH=multi&&st.mode==='each',CUM=multi&&st.mode==='cumul';
+  $('toutes').textContent=st.sas.size===saisons.length?'Décocher':'Tout cocher';
+  $('modeGrp').classList.toggle('off',!multi);
+  const q=st.q.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  let base=data.filter(r=>r.s===st.sexe&&st.sas.has(r.sa)&&(!q||(r.n+' '+r.p).toLowerCase().includes(q))&&(st.disc==='ALL'||r.d===st.disc));
+  if(CUM){const m=new Map();for(const r of base){const k=r.n+'|'+r.p+'|'+r.a+'|'+r.d;let o=m.get(k);if(!o){o={...r,WC:{dep:0,top:0},EC:{dep:0,top:0}};m.set(k,o)}for(const l of['WC','EC']){o[l].dep+=r[l].dep;o[l].top+=r[l].top}}base=[...m.values()]}
+  const rows=base.filter(r=>r[st.niv].dep>0).map(r=>({...r,dep:r[st.niv].dep,top:r[st.niv].top,pc:pct(r[st.niv].top,r[st.niv].dep)}));
+  const cmp={pct:(a,b)=>b.pc-a.pc||b.dep-a.dep,top:(a,b)=>b.top-a.top||b.pc-a.pc,nom:(a,b)=>a.n.localeCompare(b.n)||a.p.localeCompare(b.p)||a.d.localeCompare(b.d)}[st.tri];
+  rows.sort(EACH?(a,b)=>a.n.localeCompare(b.n)||a.p.localeCompare(b.p)||a.d.localeCompare(b.d)||a.sa-b.sa:cmp);
+  $('triGrp').classList.toggle('off',EACH);
+  const sx=st.sexe==='M'?'Hommes':'Dames';
+  $('titre').textContent=`${sx} · ${NIV[st.niv]} · ${fmtSa()} · ${st.disc==='ALL'?'GS + SL':DISC[st.disc]}`;
+
+  const discs=st.disc==='ALL'?['GS','SL']:[st.disc];
+  $('kpis').innerHTML=discs.map(d=>{
+    const sub=rows.filter(r=>r.d===d),D=sub.reduce((a,r)=>a+r.dep,0),T=sub.reduce((a,r)=>a+r.top,0);
+    const sur10=D?Math.round(10*T/D):0;
+    return `<div class="kpi" style="border-color:${COL[d]}"><b>${D?sur10+' sur 10':'–'}</b><small>${DISC[d]} : ${D?`${T} top 30 sur ${D} départs · ${sub.length} coureur${sub.length>1?'s':''}`:'aucun départ'}</small></div>`}).join('');
+  $('legend').innerHTML=discs.map(d=>`<span><i style="background:${COL[d]}"></i>${DISC[d]} : top 30</span>`).join('')+`<span><i class="leg-h"></i>départ hors top 30 (case vide)</span>`;
+
+  const max=Math.max(11,...rows.map(r=>r.dep));
+  $('liste').innerHTML=rows.length?rows.map(r=>{
+    const cells=max>15?`<span class="cont" style="width:${100*r.dep/max}%"><span style="width:${100*r.top/r.dep}%"></span></span>`:Array.from({length:max},(_,i)=>i<r.top?'<span class="cell on"></span>':i<r.dep?'<span class="cell"></span>':'<span class="cell" style="visibility:hidden"></span>').join('');
+    return `<div class="row" title="${r.p} ${r.n} — ${CUM?fmtSa():r.sa} — ${DISC[r.d]} : ${r.top} top 30 sur ${r.dep} départs">
+      <span class="nm" data-d="${r.d}${EACH?' · '+r.sa:''}">${nom(r.n)} ${r.p} <em>${r.a}</em></span>
+      <span class="dc">${r.d}${EACH?' · '+r.sa:''}</span>
+      <span class="bar" style="--c:${COL[r.d]}">${cells}</span>
+      <span class="val"><b>${r.top}</b> top 30 sur ${r.dep} · ${r.pc} %</span></div>`}).join('')
+    :'<p class="empty">Aucun départ pour cette sélection.</p>';
+}
+document.querySelectorAll('.seg').forEach(g=>g.addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b)return;
+  st[g.dataset.k]=b.dataset.v;
+  g.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b));
+  render();
+}));
+$('noms').innerHTML=[...new Set(data.map(r=>nom(r.n)+' '+r.p))].sort().map(x=>`<option value="${x}">`).join('');
+$('q').addEventListener('input',e=>{st.q=e.target.value;render()});
+render();
+}
+</script>
+</body>
+</html>
