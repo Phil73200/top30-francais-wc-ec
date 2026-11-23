@@ -100,6 +100,7 @@ function journal_(ss, date, statut, detail) {
   }
   sh.insertRowAfter(1);
   sh.getRange(2, 1, 1, 3).setValues([[date, statut, detail]]);
+  sh.getRange(2, 1).setNumberFormat('dd/MM/yyyy HH:mm');
   if (sh.getLastRow() > 200) sh.deleteRows(201, sh.getLastRow() - 200);
 }
 
