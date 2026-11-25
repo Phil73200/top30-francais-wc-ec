@@ -62,10 +62,22 @@ h2{font-weight:800;font-size:clamp(20px,2.6vw,26px);line-height:1.15;margin:0 0 
 .note{color:var(--mute);font-size:13px;margin-top:20px}
 @media(max-width:600px){.row{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"n v" "b b";row-gap:4px}.nm{grid-area:n}.dc{display:none}.val{grid-area:v}.bar{grid-area:b}.nm::after{content:" · " attr(data-d);font-weight:600;color:var(--mute);font-size:13px}}
 @media (prefers-reduced-motion:no-preference){.cell.on{animation:pop .3s ease-out both}@keyframes pop{from{opacity:0}}}
+.fis-nav{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 18px}
+.fis-nav a{display:inline-flex;align-items:center;gap:6px;min-height:44px;box-sizing:border-box;padding:8px 18px;border-radius:999px;font:800 15px/1.3 "Libre Franklin",system-ui,sans-serif;text-decoration:none}
+.fis-nav a.home{background:#ffe16a;border:1px solid #c8a12b;color:#17314b}
+.fis-nav a.home:hover{background:#ffd34d}
+.fis-nav a.stats{background:#00549f;border:1px solid #00549f;color:#fff}
+.fis-nav a.stats:hover{background:#003f78}
+.fis-nav a:focus-visible{outline:3px solid #022b55;outline-offset:3px}
+@media(max-width:600px){.fis-nav a{font-size:14px;padding:6px 14px}}
 </style>
 </head>
 <body>
 <main class="band">
+  <nav class="fis-nav" aria-label="Navigation Infos FIS">
+    <a class="home" href="https://infos-fis.fr/">↩ Retour à l’accueil</a>
+    <a class="stats" href="https://infos-fis.fr/data-statistiques/">← Data &amp; Statistiques</a>
+  </nav>
   <h1>Ratio nombre de départs / top 30</h1>
   <p class="majtop" id="majTop">Données du 22/11/2026</p>
   <h2 id="titre">Français dans les 30</h2>
